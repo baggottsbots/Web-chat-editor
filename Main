@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Custom Chat Interface Editor</title>
+    <style>
+        :root {
+            /* Colors */
+            --primaryColor: #36d6b5;
+            --secondaryColor: #ffffff;
+
+            /* Font */
+            --fontFamily: Helvetica, Arial, sans-serif;
+
+            /* Header */
+            --headerTextSize: 18px;
+            --headerTextColor: #ffffff;
+            --headerBgColor: #36d6b5;
+            --headerHeight: 60px;
+            --headerTextAlign: center;
+            --cornerStyle: 20px;
+
+            /* Chat Area */
+            --chatAreaColor: #f8f9fa;
+            --chatAreaBgImage: none;
+
+            /* Messages */
+            --messageTextSize: 14px;
+            --messageCornerStyle: 20px;
+            --botMessageTextColor: #212529;
+            --botMessageBg: #eeeeee;
+            --userMessageTextColor: #ffffff;
+            --userMessageBg: #36d6b5;
+
+            /* Avatar */
+            --avatarSize: 50px;
+            --avatarBorderColor: #36d6b5;
+            --avatarImageURL: url('https://i.ibb.co/JRM4sx5/IMG-8241.jpg');
+            --avatarDisplay: inline-block;
+            --avatarBorderRadius: 50%; /* Default to circle */
+
+            /* Chat Input */
+            --chatInputBgColor: #ffffff;
+            --messageInputBgColor: #f1f1f1;
+            --messageInputBorderRadius: 999px; /* Default to fully rounded */
+            --messageInputBorder: 1px solid #ced4da;
+            --messageInputTextColor: #000000; /* Changed to black */
+            --messageInputTextSize: 1rem;
+        }
+
+        /* Ensure html and body take full height */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Base Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background-color: var(--secondaryColor); 
+            font-family: var(--fontFamily); 
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container { 
+            display: flex; 
+            height: 100%; 
+        }
+        .controls { 
+            width: 300px; 
+            background: var(--secondaryColor); 
+            padding: 20px; 
+            overflow-y: auto; 
+            border-right: 1px solid #e0e0e0; 
+            height: 100vh;
+        }
+        .preview { 
+            flex: 1; 
+            background: var(--secondaryColor); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        /* Sections */
+        .section { 
+            margin-bottom: 24px; 
+            padding: 15px; 
+            background: #f8f9fa; 
+            border-radius: 8px; 
+            border: 1px solid #e0e0e0; 
+        }
+        .section-title { 
+            font-size: 16px; 
+            font-weight: 600; 
+            margin-bottom: 15px; 
+            color: #2c3e50; 
+            padding-bottom: 8px; 
+            border-bottom: 2px solid #e0e0e0; 
+        }
+
+        /* Controls */
+        .control-group { margin-bottom: 12px; }
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-size: 14px; 
+            color: #4a5568; 
+        }
+        input, select { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 4px; 
+            margin-bottom: 8px; 
+        }
+        input[type="color"] { height: 40px; padding: 0; }
+        input[type="checkbox"] { 
+            transform: scale(1.2); 
+            margin-right: 10px; 
+            vertical-align: middle;
+        }
+        .copy-button { 
+            width: 100%; 
+            padding: 10px; 
+            background: var(--primaryColor); 
+            color: var(--secondaryColor); 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: background 0.3s; 
+        }
+        .copy-button:hover { background: #2ea590; }
+
+        /* Preview Area */
+        .chat-preview-container { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            background: var(--chatAreaColor); 
+            background-image: var(--chatAreaBgImage); 
+            margin: 20px; 
+            border-radius: var(--cornerStyle); 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            position: relative; 
+        }
+        .chat-header { 
+            height: var(--headerHeight); 
+            padding: 0 20px; 
+            font-size: var(--headerTextSize); 
+            font-weight: 600; 
+            background-color: var(--headerBgColor); 
+            color: var(--headerTextColor); 
+            text-align: var(--headerTextAlign); 
+            display: flex; 
+            align-items: center; 
+            justify-content: var(--headerTextAlign); 
+            border-top-left-radius: var(--cornerStyle); 
+            border-top-right-radius: var(--cornerStyle); 
+        }
+        .chat-area { 
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+        }
+        .other-message { 
+            display: flex; 
+            align-items: flex-start; /* Align the image to the top of the text */
+            padding-left: 60px; /* Provide space for the image on the left */
+            position: relative; 
+            margin-bottom: 15px; 
+            flex-wrap: wrap; /* Ensure the content wraps so quick replies appear below */
+        }
+        .other-message:before { 
+            content: ""; 
+            display: inline-block; /* Ensures the avatar is inline-block */
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 50px; /* Match the size of the background image */
+            height: 50px; /* Match the size of the background image */
+            background-image: var(--avatarImageURL); 
+            background-size: cover; 
+            background-repeat: no-repeat; 
+            border-radius: var(--avatarBorderRadius); 
+            border: 3px solid #36d6b5; /* Add a CBB Green outline */
+        }
+        .other-message .message-text { 
+            background-color: var(--botMessageBg); 
+            color: var(--botMessageTextColor); 
+            font-size: var(--messageTextSize); 
+            border-radius: var(--messageCornerStyle); 
+            padding: 10px 15px; 
+            max-width: 70%;
+            word-wrap: break-word;
+            font-family: var(--fontFamily);
+        }
+        .my-message { 
+            display: flex; 
+            flex-direction: row-reverse; 
+            margin-left: auto; 
+            margin-bottom: 15px; 
+            /* Removed flex-wrap to prevent vertical stacking */ 
+        }
+        .my-message .message-text { 
+            background-color: var(--userMessageBg) !important; 
+            color: var(--userMessageTextColor); 
+            font-size: var(--messageTextSize); 
+            border-radius: var(--messageCornerStyle); 
+            padding: 10px 15px; 
+            max-width: 70%;
+            word-wrap: break-word;
+            font-family: var(--fontFamily);
+        }
+        .message-text * { 
+            color: inherit; 
+            font-family: inherit; 
+        }
+        .chat-input { 
+            padding: 10px 20px; 
+            background-color: var(--chatInputBgColor); 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            border-top: 1px solid #e0e0e0; 
+            position: absolute; 
+            bottom: 0; 
+            width: calc(100% - 40px); 
+            box-sizing: border-box; 
+            font-family: var(--fontFamily);
+        }
+        .chat-input input { 
+            flex: 1; 
+            padding: 10px 15px; 
+            border: var(--messageInputBorder); 
+            background-color: var(--messageInputBgColor); 
+            border-radius: var(--messageInputBorderRadius); 
+            font-size: var(--messageInputTextSize); 
+            color: var(--messageInputTextColor); 
+        }
+
+        /* Input Group Styles */
+        .input-group>.custom-select:not(:last-child), 
+        .input-group>.form-control:not(:last-child) {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .input-group>.custom-file, 
+        .input-group>.custom-select, 
+        .input-group>.form-control, 
+        .input-group>.form-control-plaintext {
+            position: relative;
+            -ms-flex: 1 1 auto;
+            flex: 1 1 auto;
+            width: 1%;
+            margin-bottom: 0;
+        }
+        .form-control {
+            display: block;
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            padding: 0.375rem 0.75rem;
+            font-size: var(--messageInputTextSize);
+            font-weight: 400;
+            line-height: 1.5;
+            color: var(--messageInputTextColor);
+            background-color: var(--messageInputBgColor);
+            background-clip: padding-box;
+            border: var(--messageInputBorder);
+            border-radius: var(--messageInputBorderRadius);
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+        }
+
+        /* General Media */
+        img, video { max-width: 100%; height: auto; }
+        audio, canvas, embed, iframe, img, object, svg, video { display: block; vertical-align: middle; }
+        img { border-style: solid; }
+        .message-text pre { 
+            font-size: inherit; 
+            color: inherit; 
+            font-family: inherit; 
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #36d6b5;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        /* Generated CSS Styles */
+        textarea#cssOutput {
+            width: 100%;
+            height: 200px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: #f1f1f1;
+            color: #333;
+        }
+
+        /* Avatar Preview */
+        .avatar-preview {
+            width: var(--avatarSize);
+            height: var(--avatarSize);
+            border: 3px solid var(--avatarBorderColor);
+            border-radius: var(--avatarBorderRadius);
+            background-image: var(--avatarImageURL);
+            background-size: cover;
+            background-repeat: no-repeat;
+            display: var(--avatarDisplay);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <!-- Header Settings -->
+            <div class="section">
+                <div class="section-title">Header Settings</div>
+                <div class="control-group">
+                    <label for="headerText">Header Text</label>
+                    <input type="text" id="headerText" value="Chat Interface">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextSize">Header Text Size (px)</label>
+                    <input type="number" id="headerTextSize" value="18" min="12" max="36">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextColor">Header Text Color</label>
+                    <input type="color" id="headerTextColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="headerBgColor">Header Background Color</label>
+                    <input type="color" id="headerBgColor" value="#36d6b5">
+                </div>
+                <div class="control-group">
+                    <label for="headerHeight">Header Height (px)</label>
+                    <input type="number" id="headerHeight" value="60" min="40" max="150">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextAlign">Header Text Alignment</label>
+                    <select id="headerTextAlign">
+                        <option value="left">Left</option>
+                        <option value="center" selected>Center</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="cornerStyle">Header Corner Style</label>
+                    <select id="cornerStyle">
+                        <option value="0px">Squared</option>
+                        <option value="20px" selected>Curved</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Chat Area Settings -->
+            <div class="section">
+                <div class="section-title">Chat Area Settings</div>
+                <div class="control-group">
+                    <label for="chatAreaColor">Chat Area Background Color</label>
+                    <input type="color" id="chatAreaColor" value="#f8f9fa">
+                </div>
+                <div class="control-group">
+                    <label for="chatAreaBgImage">Chat Area Background Image URL</label>
+                    <input type="url" id="chatAreaBgImage" placeholder="https://example.com/image.jpg">
+                </div>
+            </div>
+
+            <!-- Message Settings -->
+            <div class="section">
+                <div class="section-title">Message Settings</div>
+                <div class="control-group">
+                    <label for="messageTextSize">Message Text Size (px)</label>
+                    <input type="number" id="messageTextSize" value="14" min="12" max="24">
+                </div>
+                <div class="control-group">
+                    <label for="messageCornerStyle">Message Corner Style</label>
+                    <select id="messageCornerStyle">
+                        <option value="0px">Squared</option>
+                        <option value="20px" selected>Curved</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="botMessageTextColor">Bot Message Text Color</label>
+                    <input type="color" id="botMessageTextColor" value="#212529">
+                </div>
+                <div class="control-group">
+                    <label for="botMessageBg">Bot Message Background</label>
+                    <input type="color" id="botMessageBg" value="#eeeeee">
+                </div>
+                <div class="control-group">
+                    <label for="userMessageTextColor">User Message Text Color</label>
+                    <input type="color" id="userMessageTextColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="userMessageBg">User Message Background</label>
+                    <input type="color" id="userMessageBg" value="#36d6b5">
+                </div>
+            </div>
+
+            <!-- Font Settings -->
+            <div class="section">
+                <div class="section-title">Font Settings</div>
+                <div class="control-group">
+                    <label for="fontFamily">Font Family</label>
+                    <select id="fontFamily">
+                        <option value="Helvetica, Arial, sans-serif" selected>Helvetica</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', Courier, monospace">Courier New</option>
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="'Lato', sans-serif">Lato</option>
+                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                        <option value="'Oswald', sans-serif">Oswald</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Avatar Settings -->
+            <div class="section">
+                <div class="section-title">Avatar Settings</div>
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="showAvatar" checked>
+                        Show Avatar
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label for="avatarSize">Avatar Size (px)</label>
+                    <input type="number" id="avatarSize" value="50" min="20" max="100">
+                </div>
+                <div class="control-group">
+                    <label for="avatarBorderColor">Avatar Border Color</label>
+                    <input type="color" id="avatarBorderColor" value="#36d6b5">
+                </div>
+                <div class="control-group">
+                    <label for="avatarImageURL">Avatar Image URL</label>
+                    <input type="url" id="avatarImageURL" placeholder="https://example.com/avatar.jpg">
+                </div>
+                <!-- Avatar Shape Selection -->
+                <div class="control-group">
+                    <label for="avatarShape">Avatar Shape</label>
+                    <select id="avatarShape">
+                        <option value="circle" selected>Circle</option>
+                        <option value="square">Square</option>
+                    </select>
+                </div>
+                <div class="preview-section">
+                    <div class="section-title">Avatar Preview</div>
+                    <div class="avatar-preview"></div>
+                </div>
+            </div>
+
+            <!-- Chat Input Settings -->
+            <div class="section">
+                <div class="section-title">Chat Input Settings</div>
+                <div class="control-group">
+                    <label for="chatInputBgColor">Chat Input Background Color</label>
+                    <input type="color" id="chatInputBgColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBgColor">Message Input Field Background Color</label>
+                    <input type="color" id="messageInputBgColor" value="#f1f1f1">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputTextColor">Message Input Field Text Color</label>
+                    <input type="color" id="messageInputTextColor" value="#000000"> <!-- Changed to black -->
+                </div>
+                <div class="control-group">
+                    <label for="messageInputTextSize">Message Input Field Text Size (px)</label>
+                    <input type="number" id="messageInputTextSize" value="16" min="10" max="24">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBorderRadius">Message Input Field Border Radius (px)</label>
+                    <input type="number" id="messageInputBorderRadius" value="999" min="0" max="1000">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBorderColor">Message Input Field Border Color</label>
+                    <input type="color" id="messageInputBorderColor" value="#ced4da">
+                </div>
+            </div>
+
+            <!-- Generated CSS -->
+            <div class="section">
+                <div class="section-title">Generated CSS</div>
+                <textarea id="cssOutput" readonly></textarea>
+                <button class="copy-button" onclick="copyCSS()">Copy CSS</button>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div class="preview">
+            <!-- Chat Interface Preview -->
+            <div class="chat-preview-container">
+                <div class="chat-header">Chat Interface</div>
+                <div class="chat-area">
+                    <div class="other-message">
+                        <div class="message-text">Hello! How can I help you today?</div>
+                    </div>
+                    <div class="my-message">
+                        <div class="message-text">I have a question about your service.</div>
+                    </div>
+                    <div class="other-message">
+                        <div class="message-text">I'll be happy to help! What would you like to know?</div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" placeholder="Type your message...">
+                    <!-- Send button removed as per request -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="success-message">CSS copied to clipboard!</div>
+
+        <script>
+            function updatePreview() {
+                // Header Settings
+                const header = document.querySelector('.chat-header');
+                const headerText = document.getElementById('headerText').value;
+                header.textContent = headerText;
+
+                const headerTextSize = document.getElementById('headerTextSize').value + 'px';
+                document.documentElement.style.setProperty('--headerTextSize', headerTextSize);
+
+                const headerTextColor = document.getElementById('headerTextColor').value;
+                document.documentElement.style.setProperty('--headerTextColor', headerTextColor);
+
+                const headerBgColor = document.getElementById('headerBgColor').value;
+                document.documentElement.style.setProperty('--headerBgColor', headerBgColor);
+
+                const headerHeight = document.getElementById('headerHeight').value + 'px';
+                document.documentElement.style.setProperty('--headerHeight', headerHeight);
+
+                const headerTextAlign = document.getElementById('headerTextAlign').value;
+                document.documentElement.style.setProperty('--headerTextAlign', headerTextAlign);
+
+                const cornerStyle = document.getElementById('cornerStyle').value;
+                document.documentElement.style.setProperty('--cornerStyle', cornerStyle);
+
+                // Chat Area Settings
+                const chatAreaColor = document.getElementById('chatAreaColor').value;
+                document.documentElement.style.setProperty('--chatAreaColor', chatAreaColor);
+
+                const chatAreaBgImageInput = document.getElementById('chatAreaBgImage').value;
+                const chatAreaBgImage = chatAreaBgImageInput ? `url('${chatAreaBgImageInput}')` : 'none';
+                document.documentElement.style.setProperty('--chatAreaBgImage', chatAreaBgImage);
+
+                // Message Settings
+                const messageTextSize = document.getElementById('messageTextSize').value + 'px';
+                document.documentElement.style.setProperty('--messageTextSize', messageTextSize);
+
+                const messageCornerStyle = document.getElementById('messageCornerStyle').value;
+                document.documentElement.style.setProperty('--messageCornerStyle', messageCornerStyle);
+
+                const botMessageTextColor = document.getElementById('botMessageTextColor').value;
+                document.documentElement.style.setProperty('--botMessageTextColor', botMessageTextColor);
+
+                const botMessageBg = document.getElementById('botMessageBg').value;
+                document.documentElement.style.setProperty('--botMessageBg', botMessageBg);
+
+                const userMessageTextColor = document.getElementById('userMessageTextColor').value;
+                document.documentElement.style.setProperty('--userMessageTextColor', userMessageTextColor);
+
+                const userMessageBg = document.getElementById('userMessageBg').value;
+                document.documentElement.style.setProperty('--userMessageBg', userMessageBg);
+
+                // Font Settings
+                const fontFamily = document.getElementById('fontFamily').value;
+                document.documentElement.style.setProperty('--fontFamily', fontFamily);
+
+                // Avatar Settings
+                const showAvatar = document.getElementById('showAvatar').checked;
+                document.documentElement.style.setProperty('--avatarDisplay', showAvatar ? 'inline-block' : 'none');
+
+                const avatarSize = document.getElementById('avatarSize').value + 'px';
+                document.documentElement.style.setProperty('--avatarSize', avatarSize);
+
+                const avatarBorderColor = document.getElementById('avatarBorderColor').value;
+                document.documentElement.style.setProperty('--avatarBorderColor', avatarBorderColor);
+
+                const avatarImageURLInput = document.getElementById('avatarImageURL').value;
+                const avatarImageURL = avatarImageURLInput ? `url('${avatarImageURLInput}')` : `url('https://i.ibb.co/JRM4sx5/IMG-8241.jpg')`;
+                document.documentElement.style.setProperty('--avatarImageURL', avatarImageURL);
+
+                // Updated Avatar Shape
+                const avatarShape = document.getElementById('avatarShape').value;
+                document.documentElement.style.setProperty('--avatarBorderRadius', avatarShape === 'circle' ? '50%' : '0%');
+
+                // Update Avatar Preview Border Radius
+                const avatarPreview = document.querySelector('.avatar-preview');
+                avatarPreview.style.borderRadius = document.documentElement.style.getPropertyValue('--avatarBorderRadius');
+
+                // Update Avatar Image
+                if (avatarImageURLInput) {
+                    avatarPreview.style.backgroundImage = `url('${avatarImageURLInput}')`;
+                } else {
+                    avatarPreview.style.backgroundImage = `url('https://i.ibb.co/JRM4sx5/IMG-8241.jpg')`;
+                }
+
+                // Chat Input Settings
+                const chatInputBgColor = document.getElementById('chatInputBgColor').value;
+                document.documentElement.style.setProperty('--chatInputBgColor', chatInputBgColor);
+
+                const messageInputBgColor = document.getElementById('messageInputBgColor').value;
+                document.documentElement.style.setProperty('--messageInputBgColor', messageInputBgColor);
+
+                const messageInputTextColor = document.getElementById('messageInputTextColor').value;
+                document.documentElement.style.setProperty('--messageInputTextColor', messageInputTextColor);
+
+                const messageInputTextSize = document.getElementById('messageInputTextSize').value + 'px';
+                document.documentElement.style.setProperty('--messageInputTextSize', messageInputTextSize);
+
+                const messageInputBorderRadius = document.getElementById('messageInputBorderRadius').value + 'px';
+                document.documentElement.style.setProperty('--messageInputBorderRadius', messageInputBorderRadius);
+
+                const messageInputBorderColor = document.getElementById('messageInputBorderColor').value;
+                document.documentElement.style.setProperty('--messageInputBorder', `1px solid ${messageInputBorderColor}`);
+
+                // Generate CSS
+                generateCSS();
+            }
+
+            function generateCSS() {
+                const computedStyles = getComputedStyle(document.documentElement);
+                const css = `
+/* Root Variables */
+:root {
+    --primaryColor: ${computedStyles.getPropertyValue('--primaryColor').trim()};
+    --secondaryColor: ${computedStyles.getPropertyValue('--secondaryColor').trim()};
+    --fontFamily: ${computedStyles.getPropertyValue('--fontFamily').trim()};
+    --headerTextSize: ${computedStyles.getPropertyValue('--headerTextSize').trim()};
+    --headerTextColor: ${computedStyles.getPropertyValue('--headerTextColor').trim()};
+    --headerBgColor: ${computedStyles.getPropertyValue('--headerBgColor').trim()};
+    --headerHeight: ${computedStyles.getPropertyValue('--headerHeight').trim()};
+    --headerTextAlign: ${computedStyles.getPropertyValue('--headerTextAlign').trim()};
+    --cornerStyle: ${computedStyles.getPropertyValue('--cornerStyle').trim()};
+    --chatAreaColor: ${computedStyles.getPropertyValue('--chatAreaColor').trim()};
+    --chatAreaBgImage: ${computedStyles.getPropertyValue('--chatAreaBgImage').trim()};
+    --messageTextSize: ${computedStyles.getPropertyValue('--messageTextSize').trim()};
+    --messageCornerStyle: ${computedStyles.getPropertyValue('--messageCornerStyle').trim()};
+    --botMessageTextColor: ${computedStyles.getPropertyValue('--botMessageTextColor').trim()};
+    --botMessageBg: ${computedStyles.getPropertyValue('--botMessageBg').trim()};
+    --userMessageTextColor: ${computedStyles.getPropertyValue('--userMessageTextColor').trim()};
+    --userMessageBg: ${computedStyles.getPropertyValue('--userMessageBg').trim()};
+    --avatarSize: ${computedStyles.getPropertyValue('--avatarSize').trim()};
+    --avatarBorderColor: ${computedStyles.getPropertyValue('--avatarBorderColor').trim()};
+    --avatarImageURL: ${computedStyles.getPropertyValue('--avatarImageURL').trim()};
+    --avatarDisplay: ${computedStyles.getPropertyValue('--avatarDisplay').trim()};
+    --avatarBorderRadius: ${computedStyles.getPropertyValue('--avatarBorderRadius').trim()};
+    --chatInputBgColor: ${computedStyles.getPropertyValue('--chatInputBgColor').trim()};
+    --messageInputBgColor: ${computedStyles.getPropertyValue('--messageInputBgColor').trim()};
+    --messageInputBorderRadius: ${computedStyles.getPropertyValue('--messageInputBorderRadius').trim()};
+    --messageInputBorder: ${computedStyles.getPropertyValue('--messageInputBorder').trim()};
+    --messageInputTextColor: ${computedStyles.getPropertyValue('--messageInputTextColor').trim()};
+    --messageInputTextSize: ${computedStyles.getPropertyValue('--messageInputTextSize').trim()};
+}
+
+/* Chat Header Styling */
+.chat-header {
+    font-size: var(--headerTextSize);
+    color: var(--headerTextColor);
+    background-color: var(--headerBgColor);
+    height: var(--headerHeight);
+    text-align: var(--headerTextAlign);
+    display: flex;
+    align-items: center;
+    justify-content: var(--headerTextAlign);
+    font-family: var(--fontFamily);
+    border-top-left-radius: var(--cornerStyle);
+    border-top-right-radius: var(--cornerStyle);
+}
+
+/* Chat Area Styling */
+.chat-area {
+    background-color: var(--chatAreaColor);
+    background-image: var(--chatAreaBgImage);
+    background-size: cover;
+    background-repeat: no-repeat;
+    font-family: var(--fontFamily);
+}
+
+/* Bot Message Styling */
+.other-message .message-text {
+    background-color: var(--botMessageBg);
+    color: var(--botMessageTextColor);
+    font-size: var(--messageTextSize);
+    border-radius: var(--messageCornerStyle);
+    padding: 10px 15px;
+    font-family: var(--fontFamily);
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* User Message Styling */
+.my-message .message-text {
+    background-color: var(--userMessageBg) !important;
+    color: var(--userMessageTextColor);
+    font-size: var(--messageTextSize);
+    border-radius: var(--messageCornerStyle);
+    padding: 10px 15px;
+    font-family: var(--fontFamily);
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* Avatar Styling */
+.other-message:before {
+    content: "";
+    display: var(--avatarDisplay);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--avatarSize);
+    height: var(--avatarSize);
+    background-image: var(--avatarImageURL);
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: var(--avatarBorderRadius);
+    border: 3px solid #36D6B5; /* Fixed to CBB Green outline */
+}
+
+/* Chat Input Styling */
+.chat-input {
+    background-color: var(--chatInputBgColor);
+    font-family: var(--fontFamily);
+}
+
+.chat-input input {
+    background-color: var(--messageInputBgColor);
+    border: var(--messageInputBorder);
+    border-radius: var(--messageInputBorderRadius);
+    font-size: var(--messageInputTextSize);
+    color: var(--messageInputTextColor);
+}
+
+/* Input Group Styles */
+.input-group>.custom-select:not(:last-child), 
+.input-group>.form-control:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.input-group>.custom-file, 
+.input-group>.custom-select, 
+.input-group>.form-control, 
+.input-group>.form-control-plaintext {
+    position: relative;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    width: 1%;
+    margin-bottom: 0;
+}
+.form-control {
+    display: block;
+    width: 100%;
+    height: calc(1.5em + .75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-size: var(--messageInputTextSize);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--messageInputTextColor);
+    background-color: var(--messageInputBgColor);
+    background-clip: padding-box;
+    border: var(--messageInputBorder);
+    border-radius: var(--messageInputBorderRadius);
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+/* General Media */
+img, video { max-width: 100%; height: auto; }
+audio, canvas, embed, iframe, img, object, svg, video { display: block; vertical-align: middle; }
+img { border-style: solid; }
+.message-text pre { 
+    font-size: inherit; 
+    color: inherit; 
+    font-family: inherit; 
+}
+
+/* Success Message */
+.success-message {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #36d6b5;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+/* Generated CSS Styles */
+textarea#cssOutput {
+    width: 100%;
+    height: 200px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+/* Avatar Preview */
+.avatar-preview {
+    width: var(--avatarSize);
+    height: var(--avatarSize);
+    border: 3px solid var(--avatarBorderColor);
+    border-radius: var(--avatarBorderRadius);
+    background-image: var(--avatarImageURL);
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: var(--avatarDisplay);
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <!-- Header Settings -->
+            <div class="section">
+                <div class="section-title">Header Settings</div>
+                <div class="control-group">
+                    <label for="headerText">Header Text</label>
+                    <input type="text" id="headerText" value="Chat Interface">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextSize">Header Text Size (px)</label>
+                    <input type="number" id="headerTextSize" value="18" min="12" max="36">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextColor">Header Text Color</label>
+                    <input type="color" id="headerTextColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="headerBgColor">Header Background Color</label>
+                    <input type="color" id="headerBgColor" value="#36d6b5">
+                </div>
+                <div class="control-group">
+                    <label for="headerHeight">Header Height (px)</label>
+                    <input type="number" id="headerHeight" value="60" min="40" max="150">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextAlign">Header Text Alignment</label>
+                    <select id="headerTextAlign">
+                        <option value="left">Left</option>
+                        <option value="center" selected>Center</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="cornerStyle">Header Corner Style</label>
+                    <select id="cornerStyle">
+                        <option value="0px">Squared</option>
+                        <option value="20px" selected>Curved</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Chat Area Settings -->
+            <div class="section">
+                <div class="section-title">Chat Area Settings</div>
+                <div class="control-group">
+                    <label for="chatAreaColor">Chat Area Background Color</label>
+                    <input type="color" id="chatAreaColor" value="#f8f9fa">
+                </div>
+                <div class="control-group">
+                    <label for="chatAreaBgImage">Chat Area Background Image URL</label>
+                    <input type="url" id="chatAreaBgImage" placeholder="https://example.com/image.jpg">
+                </div>
+            </div>
+
+            <!-- Message Settings -->
+            <div class="section">
+                <div class="section-title">Message Settings</div>
+                <div class="control-group">
+                    <label for="messageTextSize">Message Text Size (px)</label>
+                    <input type="number" id="messageTextSize" value="14" min="12" max="24">
+                </div>
+                <div class="control-group">
+                    <label for="messageCornerStyle">Message Corner Style</label>
+                    <select id="messageCornerStyle">
+                        <option value="0px">Squared</option>
+                        <option value="20px" selected>Curved</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="botMessageTextColor">Bot Message Text Color</label>
+                    <input type="color" id="botMessageTextColor" value="#212529">
+                </div>
+                <div class="control-group">
+                    <label for="botMessageBg">Bot Message Background</label>
+                    <input type="color" id="botMessageBg" value="#eeeeee">
+                </div>
+                <div class="control-group">
+                    <label for="userMessageTextColor">User Message Text Color</label>
+                    <input type="color" id="userMessageTextColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="userMessageBg">User Message Background</label>
+                    <input type="color" id="userMessageBg" value="#36d6b5">
+                </div>
+            </div>
+
+            <!-- Font Settings -->
+            <div class="section">
+                <div class="section-title">Font Settings</div>
+                <div class="control-group">
+                    <label for="fontFamily">Font Family</label>
+                    <select id="fontFamily">
+                        <option value="Helvetica, Arial, sans-serif" selected>Helvetica</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', Courier, monospace">Courier New</option>
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="'Lato', sans-serif">Lato</option>
+                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                        <option value="'Oswald', sans-serif">Oswald</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Avatar Settings -->
+            <div class="section">
+                <div class="section-title">Avatar Settings</div>
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="showAvatar" checked>
+                        Show Avatar
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label for="avatarSize">Avatar Size (px)</label>
+                    <input type="number" id="avatarSize" value="50" min="20" max="100">
+                </div>
+                <div class="control-group">
+                    <label for="avatarBorderColor">Avatar Border Color</label>
+                    <input type="color" id="avatarBorderColor" value="#36d6b5">
+                </div>
+                <div class="control-group">
+                    <label for="avatarImageURL">Avatar Image URL</label>
+                    <input type="url" id="avatarImageURL" placeholder="https://example.com/avatar.jpg">
+                </div>
+                <!-- Avatar Shape Selection -->
+                <div class="control-group">
+                    <label for="avatarShape">Avatar Shape</label>
+                    <select id="avatarShape">
+                        <option value="circle" selected>Circle</option>
+                        <option value="square">Square</option>
+                    </select>
+                </div>
+                <div class="preview-section">
+                    <div class="section-title">Avatar Preview</div>
+                    <div class="avatar-preview"></div>
+                </div>
+            </div>
+
+            <!-- Chat Input Settings -->
+            <div class="section">
+                <div class="section-title">Chat Input Settings</div>
+                <div class="control-group">
+                    <label for="chatInputBgColor">Chat Input Background Color</label>
+                    <input type="color" id="chatInputBgColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBgColor">Message Input Field Background Color</label>
+                    <input type="color" id="messageInputBgColor" value="#f1f1f1">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputTextColor">Message Input Field Text Color</label>
+                    <input type="color" id="messageInputTextColor" value="#000000"> <!-- Changed to black -->
+                </div>
+                <div class="control-group">
+                    <label for="messageInputTextSize">Message Input Field Text Size (px)</label>
+                    <input type="number" id="messageInputTextSize" value="16" min="10" max="24">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBorderRadius">Message Input Field Border Radius (px)</label>
+                    <input type="number" id="messageInputBorderRadius" value="999" min="0" max="1000">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBorderColor">Message Input Field Border Color</label>
+                    <input type="color" id="messageInputBorderColor" value="#ced4da">
+                </div>
+            </div>
+
+            <!-- Generated CSS -->
+            <div class="section">
+                <div class="section-title">Generated CSS</div>
+                <textarea id="cssOutput" readonly></textarea>
+                <button class="copy-button" onclick="copyCSS()">Copy CSS</button>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div class="preview">
+            <!-- Chat Interface Preview -->
+            <div class="chat-preview-container">
+                <div class="chat-header">Chat Interface</div>
+                <div class="chat-area">
+                    <div class="other-message">
+                        <div class="message-text">Hello! How can I help you today?</div>
+                    </div>
+                    <div class="my-message">
+                        <div class="message-text">I have a question about your service.</div>
+                    </div>
+                    <div class="other-message">
+                        <div class="message-text">I'll be happy to help! What would you like to know?</div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" placeholder="Type your message...">
+                    <!-- Send button removed as per request -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="success-message">CSS copied to clipboard!</div>
+
+        <script>
+            function updatePreview() {
+                // Header Settings
+                const header = document.querySelector('.chat-header');
+                const headerText = document.getElementById('headerText').value;
+                header.textContent = headerText;
+
+                const headerTextSize = document.getElementById('headerTextSize').value + 'px';
+                document.documentElement.style.setProperty('--headerTextSize', headerTextSize);
+
+                const headerTextColor = document.getElementById('headerTextColor').value;
+                document.documentElement.style.setProperty('--headerTextColor', headerTextColor);
+
+                const headerBgColor = document.getElementById('headerBgColor').value;
+                document.documentElement.style.setProperty('--headerBgColor', headerBgColor);
+
+                const headerHeight = document.getElementById('headerHeight').value + 'px';
+                document.documentElement.style.setProperty('--headerHeight', headerHeight);
+
+                const headerTextAlign = document.getElementById('headerTextAlign').value;
+                document.documentElement.style.setProperty('--headerTextAlign', headerTextAlign);
+
+                const cornerStyle = document.getElementById('cornerStyle').value;
+                document.documentElement.style.setProperty('--cornerStyle', cornerStyle);
+
+                // Chat Area Settings
+                const chatAreaColor = document.getElementById('chatAreaColor').value;
+                document.documentElement.style.setProperty('--chatAreaColor', chatAreaColor);
+
+                const chatAreaBgImageInput = document.getElementById('chatAreaBgImage').value;
+                const chatAreaBgImage = chatAreaBgImageInput ? `url('${chatAreaBgImageInput}')` : 'none';
+                document.documentElement.style.setProperty('--chatAreaBgImage', chatAreaBgImage);
+
+                // Message Settings
+                const messageTextSize = document.getElementById('messageTextSize').value + 'px';
+                document.documentElement.style.setProperty('--messageTextSize', messageTextSize);
+
+                const messageCornerStyle = document.getElementById('messageCornerStyle').value;
+                document.documentElement.style.setProperty('--messageCornerStyle', messageCornerStyle);
+
+                const botMessageTextColor = document.getElementById('botMessageTextColor').value;
+                document.documentElement.style.setProperty('--botMessageTextColor', botMessageTextColor);
+
+                const botMessageBg = document.getElementById('botMessageBg').value;
+                document.documentElement.style.setProperty('--botMessageBg', botMessageBg);
+
+                const userMessageTextColor = document.getElementById('userMessageTextColor').value;
+                document.documentElement.style.setProperty('--userMessageTextColor', userMessageTextColor);
+
+                const userMessageBg = document.getElementById('userMessageBg').value;
+                document.documentElement.style.setProperty('--userMessageBg', userMessageBg);
+
+                // Font Settings
+                const fontFamily = document.getElementById('fontFamily').value;
+                document.documentElement.style.setProperty('--fontFamily', fontFamily);
+
+                // Avatar Settings
+                const showAvatar = document.getElementById('showAvatar').checked;
+                document.documentElement.style.setProperty('--avatarDisplay', showAvatar ? 'inline-block' : 'none');
+
+                const avatarSize = document.getElementById('avatarSize').value + 'px';
+                document.documentElement.style.setProperty('--avatarSize', avatarSize);
+
+                const avatarBorderColor = document.getElementById('avatarBorderColor').value;
+                document.documentElement.style.setProperty('--avatarBorderColor', avatarBorderColor);
+
+                const avatarImageURLInput = document.getElementById('avatarImageURL').value;
+                const avatarImageURL = avatarImageURLInput ? `url('${avatarImageURLInput}')` : `url('https://i.ibb.co/JRM4sx5/IMG-8241.jpg')`;
+                document.documentElement.style.setProperty('--avatarImageURL', avatarImageURL);
+
+                // Updated Avatar Shape
+                const avatarShape = document.getElementById('avatarShape').value;
+                document.documentElement.style.setProperty('--avatarBorderRadius', avatarShape === 'circle' ? '50%' : '0%');
+
+                // Update Avatar Preview Border Radius
+                const avatarPreview = document.querySelector('.avatar-preview');
+                avatarPreview.style.borderRadius = document.documentElement.style.getPropertyValue('--avatarBorderRadius');
+
+                // Update Avatar Image
+                if (avatarImageURLInput) {
+                    avatarPreview.style.backgroundImage = `url('${avatarImageURLInput}')`;
+                } else {
+                    avatarPreview.style.backgroundImage = `url('https://i.ibb.co/JRM4sx5/IMG-8241.jpg')`;
+                }
+
+                // Chat Input Settings
+                const chatInputBgColor = document.getElementById('chatInputBgColor').value;
+                document.documentElement.style.setProperty('--chatInputBgColor', chatInputBgColor);
+
+                const messageInputBgColor = document.getElementById('messageInputBgColor').value;
+                document.documentElement.style.setProperty('--messageInputBgColor', messageInputBgColor);
+
+                const messageInputTextColor = document.getElementById('messageInputTextColor').value;
+                document.documentElement.style.setProperty('--messageInputTextColor', messageInputTextColor);
+
+                const messageInputTextSize = document.getElementById('messageInputTextSize').value + 'px';
+                document.documentElement.style.setProperty('--messageInputTextSize', messageInputTextSize);
+
+                const messageInputBorderRadius = document.getElementById('messageInputBorderRadius').value + 'px';
+                document.documentElement.style.setProperty('--messageInputBorderRadius', messageInputBorderRadius);
+
+                const messageInputBorderColor = document.getElementById('messageInputBorderColor').value;
+                document.documentElement.style.setProperty('--messageInputBorder', `1px solid ${messageInputBorderColor}`);
+
+                // Generate CSS
+                generateCSS();
+            }
+
+            function generateCSS() {
+                const computedStyles = getComputedStyle(document.documentElement);
+                const css = `
+/* Root Variables */
+:root {
+    --primaryColor: ${computedStyles.getPropertyValue('--primaryColor').trim()};
+    --secondaryColor: ${computedStyles.getPropertyValue('--secondaryColor').trim()};
+    --fontFamily: ${computedStyles.getPropertyValue('--fontFamily').trim()};
+    --headerTextSize: ${computedStyles.getPropertyValue('--headerTextSize').trim()};
+    --headerTextColor: ${computedStyles.getPropertyValue('--headerTextColor').trim()};
+    --headerBgColor: ${computedStyles.getPropertyValue('--headerBgColor').trim()};
+    --headerHeight: ${computedStyles.getPropertyValue('--headerHeight').trim()};
+    --headerTextAlign: ${computedStyles.getPropertyValue('--headerTextAlign').trim()};
+    --cornerStyle: ${computedStyles.getPropertyValue('--cornerStyle').trim()};
+    --chatAreaColor: ${computedStyles.getPropertyValue('--chatAreaColor').trim()};
+    --chatAreaBgImage: ${computedStyles.getPropertyValue('--chatAreaBgImage').trim()};
+    --messageTextSize: ${computedStyles.getPropertyValue('--messageTextSize').trim()};
+    --messageCornerStyle: ${computedStyles.getPropertyValue('--messageCornerStyle').trim()};
+    --botMessageTextColor: ${computedStyles.getPropertyValue('--botMessageTextColor').trim()};
+    --botMessageBg: ${computedStyles.getPropertyValue('--botMessageBg').trim()};
+    --userMessageTextColor: ${computedStyles.getPropertyValue('--userMessageTextColor').trim()};
+    --userMessageBg: ${computedStyles.getPropertyValue('--userMessageBg').trim()};
+    --avatarSize: ${computedStyles.getPropertyValue('--avatarSize').trim()};
+    --avatarBorderColor: ${computedStyles.getPropertyValue('--avatarBorderColor').trim()};
+    --avatarImageURL: ${computedStyles.getPropertyValue('--avatarImageURL').trim()};
+    --avatarDisplay: ${computedStyles.getPropertyValue('--avatarDisplay').trim()};
+    --avatarBorderRadius: ${computedStyles.getPropertyValue('--avatarBorderRadius').trim()};
+    --chatInputBgColor: ${computedStyles.getPropertyValue('--chatInputBgColor').trim()};
+    --messageInputBgColor: ${computedStyles.getPropertyValue('--messageInputBgColor').trim()};
+    --messageInputBorderRadius: ${computedStyles.getPropertyValue('--messageInputBorderRadius').trim()};
+    --messageInputBorder: ${computedStyles.getPropertyValue('--messageInputBorder').trim()};
+    --messageInputTextColor: ${computedStyles.getPropertyValue('--messageInputTextColor').trim()};
+    --messageInputTextSize: ${computedStyles.getPropertyValue('--messageInputTextSize').trim()};
+}
+
+/* Chat Header Styling */
+.chat-header {
+    font-size: var(--headerTextSize);
+    color: var(--headerTextColor);
+    background-color: var(--headerBgColor);
+    height: var(--headerHeight);
+    text-align: var(--headerTextAlign);
+    display: flex;
+    align-items: center;
+    justify-content: var(--headerTextAlign);
+    font-family: var(--fontFamily);
+    border-top-left-radius: var(--cornerStyle);
+    border-top-right-radius: var(--cornerStyle);
+}
+
+/* Chat Area Styling */
+.chat-area {
+    background-color: var(--chatAreaColor);
+    background-image: var(--chatAreaBgImage);
+    background-size: cover;
+    background-repeat: no-repeat;
+    font-family: var(--fontFamily);
+}
+
+/* Bot Message Styling */
+.other-message .message-text {
+    background-color: var(--botMessageBg);
+    color: var(--botMessageTextColor);
+    font-size: var(--messageTextSize);
+    border-radius: var(--messageCornerStyle);
+    padding: 10px 15px;
+    font-family: var(--fontFamily);
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* User Message Styling */
+.my-message .message-text {
+    background-color: var(--userMessageBg) !important;
+    color: var(--userMessageTextColor);
+    font-size: var(--messageTextSize);
+    border-radius: var(--messageCornerStyle);
+    padding: 10px 15px;
+    font-family: var(--fontFamily);
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* Avatar Styling */
+.other-message:before {
+    content: "";
+    display: var(--avatarDisplay);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--avatarSize);
+    height: var(--avatarSize);
+    background-image: var(--avatarImageURL);
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: var(--avatarBorderRadius);
+    border: 3px solid #36D6B5; /* Fixed to CBB Green outline */
+}
+
+/* Chat Input Styling */
+.chat-input {
+    background-color: var(--chatInputBgColor);
+    font-family: var(--fontFamily);
+}
+
+.chat-input input {
+    background-color: var(--messageInputBgColor);
+    border: var(--messageInputBorder);
+    border-radius: var(--messageInputBorderRadius);
+    font-size: var(--messageInputTextSize);
+    color: var(--messageInputTextColor);
+}
+
+/* Input Group Styles */
+.input-group>.custom-select:not(:last-child), 
+.input-group>.form-control:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.input-group>.custom-file, 
+.input-group>.custom-select, 
+.input-group>.form-control, 
+.input-group>.form-control-plaintext {
+    position: relative;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    width: 1%;
+    margin-bottom: 0;
+}
+.form-control {
+    display: block;
+    width: 100%;
+    height: calc(1.5em + .75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-size: var(--messageInputTextSize);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--messageInputTextColor);
+    background-color: var(--messageInputBgColor);
+    background-clip: padding-box;
+    border: var(--messageInputBorder);
+    border-radius: var(--messageInputBorderRadius);
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+/* General Media */
+img, video { max-width: 100%; height: auto; }
+audio, canvas, embed, iframe, img, object, svg, video { display: block; vertical-align: middle; }
+img { border-style: solid; }
+.message-text pre { 
+    font-size: inherit; 
+    color: inherit; 
+    font-family: inherit; 
+}
+
+/* Success Message */
+.success-message {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #36d6b5;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+/* Generated CSS Styles */
+textarea#cssOutput {
+    width: 100%;
+    height: 200px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+/* Avatar Preview */
+.avatar-preview {
+    width: var(--avatarSize);
+    height: var(--avatarSize);
+    border: 3px solid var(--avatarBorderColor);
+    border-radius: var(--avatarBorderRadius);
+    background-image: var(--avatarImageURL);
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: var(--avatarDisplay);
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <!-- Header Settings -->
+            <div class="section">
+                <div class="section-title">Header Settings</div>
+                <div class="control-group">
+                    <label for="headerText">Header Text</label>
+                    <input type="text" id="headerText" value="Chat Interface">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextSize">Header Text Size (px)</label>
+                    <input type="number" id="headerTextSize" value="18" min="12" max="36">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextColor">Header Text Color</label>
+                    <input type="color" id="headerTextColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="headerBgColor">Header Background Color</label>
+                    <input type="color" id="headerBgColor" value="#36d6b5">
+                </div>
+                <div class="control-group">
+                    <label for="headerHeight">Header Height (px)</label>
+                    <input type="number" id="headerHeight" value="60" min="40" max="150">
+                </div>
+                <div class="control-group">
+                    <label for="headerTextAlign">Header Text Alignment</label>
+                    <select id="headerTextAlign">
+                        <option value="left">Left</option>
+                        <option value="center" selected>Center</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="cornerStyle">Header Corner Style</label>
+                    <select id="cornerStyle">
+                        <option value="0px">Squared</option>
+                        <option value="20px" selected>Curved</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Chat Area Settings -->
+            <div class="section">
+                <div class="section-title">Chat Area Settings</div>
+                <div class="control-group">
+                    <label for="chatAreaColor">Chat Area Background Color</label>
+                    <input type="color" id="chatAreaColor" value="#f8f9fa">
+                </div>
+                <div class="control-group">
+                    <label for="chatAreaBgImage">Chat Area Background Image URL</label>
+                    <input type="url" id="chatAreaBgImage" placeholder="https://example.com/image.jpg">
+                </div>
+            </div>
+
+            <!-- Message Settings -->
+            <div class="section">
+                <div class="section-title">Message Settings</div>
+                <div class="control-group">
+                    <label for="messageTextSize">Message Text Size (px)</label>
+                    <input type="number" id="messageTextSize" value="14" min="12" max="24">
+                </div>
+                <div class="control-group">
+                    <label for="messageCornerStyle">Message Corner Style</label>
+                    <select id="messageCornerStyle">
+                        <option value="0px">Squared</option>
+                        <option value="20px" selected>Curved</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="botMessageTextColor">Bot Message Text Color</label>
+                    <input type="color" id="botMessageTextColor" value="#212529">
+                </div>
+                <div class="control-group">
+                    <label for="botMessageBg">Bot Message Background</label>
+                    <input type="color" id="botMessageBg" value="#eeeeee">
+                </div>
+                <div class="control-group">
+                    <label for="userMessageTextColor">User Message Text Color</label>
+                    <input type="color" id="userMessageTextColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="userMessageBg">User Message Background</label>
+                    <input type="color" id="userMessageBg" value="#36d6b5">
+                </div>
+            </div>
+
+            <!-- Font Settings -->
+            <div class="section">
+                <div class="section-title">Font Settings</div>
+                <div class="control-group">
+                    <label for="fontFamily">Font Family</label>
+                    <select id="fontFamily">
+                        <option value="Helvetica, Arial, sans-serif" selected>Helvetica</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', Courier, monospace">Courier New</option>
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="'Lato', sans-serif">Lato</option>
+                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                        <option value="'Oswald', sans-serif">Oswald</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Avatar Settings -->
+            <div class="section">
+                <div class="section-title">Avatar Settings</div>
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="showAvatar" checked>
+                        Show Avatar
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label for="avatarSize">Avatar Size (px)</label>
+                    <input type="number" id="avatarSize" value="50" min="20" max="100">
+                </div>
+                <div class="control-group">
+                    <label for="avatarBorderColor">Avatar Border Color</label>
+                    <input type="color" id="avatarBorderColor" value="#36d6b5">
+                </div>
+                <div class="control-group">
+                    <label for="avatarImageURL">Avatar Image URL</label>
+                    <input type="url" id="avatarImageURL" placeholder="https://example.com/avatar.jpg">
+                </div>
+                <!-- Avatar Shape Selection -->
+                <div class="control-group">
+                    <label for="avatarShape">Avatar Shape</label>
+                    <select id="avatarShape">
+                        <option value="circle" selected>Circle</option>
+                        <option value="square">Square</option>
+                    </select>
+                </div>
+                <div class="preview-section">
+                    <div class="section-title">Avatar Preview</div>
+                    <div class="avatar-preview"></div>
+                </div>
+            </div>
+
+            <!-- Chat Input Settings -->
+            <div class="section">
+                <div class="section-title">Chat Input Settings</div>
+                <div class="control-group">
+                    <label for="chatInputBgColor">Chat Input Background Color</label>
+                    <input type="color" id="chatInputBgColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBgColor">Message Input Field Background Color</label>
+                    <input type="color" id="messageInputBgColor" value="#f1f1f1">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputTextColor">Message Input Field Text Color</label>
+                    <input type="color" id="messageInputTextColor" value="#000000"> <!-- Changed to black -->
+                </div>
+                <div class="control-group">
+                    <label for="messageInputTextSize">Message Input Field Text Size (px)</label>
+                    <input type="number" id="messageInputTextSize" value="16" min="10" max="24">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBorderRadius">Message Input Field Border Radius (px)</label>
+                    <input type="number" id="messageInputBorderRadius" value="999" min="0" max="1000">
+                </div>
+                <div class="control-group">
+                    <label for="messageInputBorderColor">Message Input Field Border Color</label>
+                    <input type="color" id="messageInputBorderColor" value="#ced4da">
+                </div>
+            </div>
+
+            <!-- Generated CSS -->
+            <div class="section">
+                <div class="section-title">Generated CSS</div>
+                <textarea id="cssOutput" readonly></textarea>
+                <button class="copy-button" onclick="copyCSS()">Copy CSS</button>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div class="preview">
+            <!-- Chat Interface Preview -->
+            <div class="chat-preview-container">
+                <div class="chat-header">Chat Interface</div>
+                <div class="chat-area">
+                    <div class="other-message">
+                        <div class="message-text">Hello! How can I help you today?</div>
+                    </div>
+                    <div class="my-message">
+                        <div class="message-text">I have a question about your service.</div>
+                    </div>
+                    <div class="other-message">
+                        <div class="message-text">I'll be happy to help! What would you like to know?</div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" placeholder="Type your message...">
+                    <!-- Send button removed as per request -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="success-message">CSS copied to clipboard!</div>
+
+        <script>
+            function updatePreview() {
+                // Header Settings
+                const header = document.querySelector('.chat-header');
+                const headerText = document.getElementById('headerText').value;
+                header.textContent = headerText;
+
+                const headerTextSize = document.getElementById('headerTextSize').value + 'px';
+                document.documentElement.style.setProperty('--headerTextSize', headerTextSize);
+
+                const headerTextColor = document.getElementById('headerTextColor').value;
+                document.documentElement.style.setProperty('--headerTextColor', headerTextColor);
+
+                const headerBgColor = document.getElementById('headerBgColor').value;
+                document.documentElement.style.setProperty('--headerBgColor', headerBgColor);
+
+                const headerHeight = document.getElementById('headerHeight').value + 'px';
+                document.documentElement.style.setProperty('--headerHeight', headerHeight);
+
+                const headerTextAlign = document.getElementById('headerTextAlign').value;
+                document.documentElement.style.setProperty('--headerTextAlign', headerTextAlign);
+
+                const cornerStyle = document.getElementById('cornerStyle').value;
+                document.documentElement.style.setProperty('--cornerStyle', cornerStyle);
+
+                // Chat Area Settings
+                const chatAreaColor = document.getElementById('chatAreaColor').value;
+                document.documentElement.style.setProperty('--chatAreaColor', chatAreaColor);
+
+                const chatAreaBgImageInput = document.getElementById('chatAreaBgImage').value;
+                const chatAreaBgImage = chatAreaBgImageInput ? `url('${chatAreaBgImageInput}')` : 'none';
+                document.documentElement.style.setProperty('--chatAreaBgImage', chatAreaBgImage);
+
+                // Message Settings
+                const messageTextSize = document.getElementById('messageTextSize').value + 'px';
+                document.documentElement.style.setProperty('--messageTextSize', messageTextSize);
+
+                const messageCornerStyle = document.getElementById('messageCornerStyle').value;
+                document.documentElement.style.setProperty('--messageCornerStyle', messageCornerStyle);
+
+                const botMessageTextColor = document.getElementById('botMessageTextColor').value;
+                document.documentElement.style.setProperty('--botMessageTextColor', botMessageTextColor);
+
+                const botMessageBg = document.getElementById('botMessageBg').value;
+                document.documentElement.style.setProperty('--botMessageBg', botMessageBg);
+
+                const userMessageTextColor = document.getElementById('userMessageTextColor').value;
+                document.documentElement.style.setProperty('--userMessageTextColor', userMessageTextColor);
+
+                const userMessageBg = document.getElementById('userMessageBg').value;
+                document.documentElement.style.setProperty('--userMessageBg', userMessageBg);
+
+                // Font Settings
+                const fontFamily = document.getElementById('fontFamily').value;
+                document.documentElement.style.setProperty('--fontFamily', fontFamily);
+
+                // Avatar Settings
+                const showAvatar = document.getElementById('showAvatar').checked;
+                document.documentElement.style.setProperty('--avatarDisplay', showAvatar ? 'inline-block' : 'none');
+
+                const avatarSize = document.getElementById('avatarSize').value + 'px';
+                document.documentElement.style.setProperty('--avatarSize', avatarSize);
+
+                const avatarBorderColor = document.getElementById('avatarBorderColor').value;
+                document.documentElement.style.setProperty('--avatarBorderColor', avatarBorderColor);
+
+                const avatarImageURLInput = document.getElementById('avatarImageURL').value;
+                const avatarImageURL = avatarImageURLInput ? `url('${avatarImageURLInput}')` : `url('https://i.ibb.co/JRM4sx5/IMG-8241.jpg')`;
+                document.documentElement.style.setProperty('--avatarImageURL', avatarImageURL);
+
+                // Updated Avatar Shape
+                const avatarShape = document.getElementById('avatarShape').value;
+                document.documentElement.style.setProperty('--avatarBorderRadius', avatarShape === 'circle' ? '50%' : '0%');
+
+                // Update Avatar Preview Border Radius
+                const avatarPreview = document.querySelector('.avatar-preview');
+                avatarPreview.style.borderRadius = document.documentElement.style.getPropertyValue('--avatarBorderRadius');
+
+                // Update Avatar Image
+                if (avatarImageURLInput) {
+                    avatarPreview.style.backgroundImage = `url('${avatarImageURLInput}')`;
+                } else {
+                    avatarPreview.style.backgroundImage = `url('https://i.ibb.co/JRM4sx5/IMG-8241.jpg')`;
+                }
+
+                // Chat Input Settings
+                const chatInputBgColor = document.getElementById('chatInputBgColor').value;
+                document.documentElement.style.setProperty('--chatInputBgColor', chatInputBgColor);
+
+                const messageInputBgColor = document.getElementById('messageInputBgColor').value;
+                document.documentElement.style.setProperty('--messageInputBgColor', messageInputBgColor);
+
+                const messageInputTextColor = document.getElementById('messageInputTextColor').value;
+                document.documentElement.style.setProperty('--messageInputTextColor', messageInputTextColor);
+
+                const messageInputTextSize = document.getElementById('messageInputTextSize').value + 'px';
+                document.documentElement.style.setProperty('--messageInputTextSize', messageInputTextSize);
+
+                const messageInputBorderRadius = document.getElementById('messageInputBorderRadius').value + 'px';
+                document.documentElement.style.setProperty('--messageInputBorderRadius', messageInputBorderRadius);
+
+                const messageInputBorderColor = document.getElementById('messageInputBorderColor').value;
+                document.documentElement.style.setProperty('--messageInputBorder', `1px solid ${messageInputBorderColor}`);
+
+                // Generate CSS
+                generateCSS();
+            }
+
+            function generateCSS() {
+                const computedStyles = getComputedStyle(document.documentElement);
+                const css = `
+/* Root Variables */
+:root {
+    --primaryColor: ${computedStyles.getPropertyValue('--primaryColor').trim()};
+    --secondaryColor: ${computedStyles.getPropertyValue('--secondaryColor').trim()};
+    --fontFamily: ${computedStyles.getPropertyValue('--fontFamily').trim()};
+    --headerTextSize: ${computedStyles.getPropertyValue('--headerTextSize').trim()};
+    --headerTextColor: ${computedStyles.getPropertyValue('--headerTextColor').trim()};
+    --headerBgColor: ${computedStyles.getPropertyValue('--headerBgColor').trim()};
+    --headerHeight: ${computedStyles.getPropertyValue('--headerHeight').trim()};
+    --headerTextAlign: ${computedStyles.getPropertyValue('--headerTextAlign').trim()};
+    --cornerStyle: ${computedStyles.getPropertyValue('--cornerStyle').trim()};
+    --chatAreaColor: ${computedStyles.getPropertyValue('--chatAreaColor').trim()};
+    --chatAreaBgImage: ${computedStyles.getPropertyValue('--chatAreaBgImage').trim()};
+    --messageTextSize: ${computedStyles.getPropertyValue('--messageTextSize').trim()};
+    --messageCornerStyle: ${computedStyles.getPropertyValue('--messageCornerStyle').trim()};
+    --botMessageTextColor: ${computedStyles.getPropertyValue('--botMessageTextColor').trim()};
+    --botMessageBg: ${computedStyles.getPropertyValue('--botMessageBg').trim()};
+    --userMessageTextColor: ${computedStyles.getPropertyValue('--userMessageTextColor').trim()};
+    --userMessageBg: ${computedStyles.getPropertyValue('--userMessageBg').trim()};
+    --avatarSize: ${computedStyles.getPropertyValue('--avatarSize').trim()};
+    --avatarBorderColor: ${computedStyles.getPropertyValue('--avatarBorderColor').trim()};
+    --avatarImageURL: ${computedStyles.getPropertyValue('--avatarImageURL').trim()};
+    --avatarDisplay: ${computedStyles.getPropertyValue('--avatarDisplay').trim()};
+    --avatarBorderRadius: ${computedStyles.getPropertyValue('--avatarBorderRadius').trim()};
+    --chatInputBgColor: ${computedStyles.getPropertyValue('--chatInputBgColor').trim()};
+    --messageInputBgColor: ${computedStyles.getPropertyValue('--messageInputBgColor').trim()};
+    --messageInputBorderRadius: ${computedStyles.getPropertyValue('--messageInputBorderRadius').trim()};
+    --messageInputBorder: ${computedStyles.getPropertyValue('--messageInputBorder').trim()};
+    --messageInputTextColor: ${computedStyles.getPropertyValue('--messageInputTextColor').trim()};
+    --messageInputTextSize: ${computedStyles.getPropertyValue('--messageInputTextSize').trim()};
+}
+
+/* Chat Header Styling */
+.chat-header {
+    font-size: var(--headerTextSize);
+    color: var(--headerTextColor);
+    background-color: var(--headerBgColor);
+    height: var(--headerHeight);
+    text-align: var(--headerTextAlign);
+    display: flex;
+    align-items: center;
+    justify-content: var(--headerTextAlign);
+    font-family: var(--fontFamily);
+    border-top-left-radius: var(--cornerStyle);
+    border-top-right-radius: var(--cornerStyle);
+}
+
+/* Chat Area Styling */
+.chat-area {
+    background-color: var(--chatAreaColor);
+    background-image: var(--chatAreaBgImage);
+    background-size: cover;
+    background-repeat: no-repeat;
+    font-family: var(--fontFamily);
+}
+
+/* Bot Message Styling */
+.other-message .message-text {
+    background-color: var(--botMessageBg);
+    color: var(--botMessageTextColor);
+    font-size: var(--messageTextSize);
+    border-radius: var(--messageCornerStyle);
+    padding: 10px 15px;
+    font-family: var(--fontFamily);
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* User Message Styling */
+.my-message .message-text {
+    background-color: var(--userMessageBg) !important;
+    color: var(--userMessageTextColor);
+    font-size: var(--messageTextSize);
+    border-radius: var(--messageCornerStyle);
+    padding: 10px 15px;
+    font-family: var(--fontFamily);
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* Avatar Styling */
+.other-message:before {
+    content: "";
+    display: var(--avatarDisplay);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--avatarSize);
+    height: var(--avatarSize);
+    background-image: var(--avatarImageURL);
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: var(--avatarBorderRadius);
+    border: 3px solid #36D6B5; /* Fixed to CBB Green outline */
+}
+
+/* Chat Input Styling */
+.chat-input {
+    background-color: var(--chatInputBgColor);
+    font-family: var(--fontFamily);
+}
+
+.chat-input input {
+    background-color: var(--messageInputBgColor);
+    border: var(--messageInputBorder);
+    border-radius: var(--messageInputBorderRadius);
+    font-size: var(--messageInputTextSize);
+    color: var(--messageInputTextColor);
+}
+
+/* Input Group Styles */
+.input-group>.custom-select:not(:last-child), 
+.input-group>.form-control:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.input-group>.custom-file, 
+.input-group>.custom-select, 
+.input-group>.form-control, 
+.input-group>.form-control-plaintext {
+    position: relative;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    width: 1%;
+    margin-bottom: 0;
+}
+.form-control {
+    display: block;
+    width: 100%;
+    height: calc(1.5em + .75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-size: var(--messageInputTextSize);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--messageInputTextColor);
+    background-color: var(--messageInputBgColor);
+    background-clip: padding-box;
+    border: var(--messageInputBorder);
+    border-radius: var(--messageInputBorderRadius);
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+/* General Media */
+img, video { max-width: 100%; height: auto; }
+audio, canvas, embed, iframe, img, object, svg, video { display: block; vertical-align: middle; }
+img { border-style: solid; }
+.message-text pre { 
+    font-size: inherit; 
+    color: inherit; 
+    font-family: inherit; 
+}
+
+/* Success Message */
+.success-message {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #36d6b5;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+/* Generated CSS Styles */
+textarea#cssOutput {
+    width: 100%;
+    height: 200px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+/* Avatar Preview */
+.avatar-preview {
+    width: var(--avatarSize);
+    height: var(--avatarSize);
+    border: 3px solid var(--avatarBorderColor);
+    border-radius: var(--avatarBorderRadius);
+    background-image: var(--avatarImageURL);
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: var(--avatarDisplay);
+}
+                `;
+                document.getElementById('cssOutput').value = css;
+            }
+
+            function copyCSS() {
+                const cssOutput = document.getElementById('cssOutput');
+                cssOutput.select();
+                cssOutput.setSelectionRange(0, 99999); // For mobile devices
+                navigator.clipboard.writeText(cssOutput.value).then(() => {
+                    const successMessage = document.getElementById('successMessage');
+                    successMessage.style.display = 'block';
+                    setTimeout(() => { successMessage.style.display = 'none'; }, 2000);
+                }).catch(err => {
+                    alert('Failed to copy CSS: ' + err);
+                });
+            }
+
+            // Event Listeners
+            document.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('input', updatePreview);
+                input.addEventListener('change', updatePreview);
+            });
+
+            window.onload = updatePreview;
+        </script>
+    </div>
+</body>
+</html>
